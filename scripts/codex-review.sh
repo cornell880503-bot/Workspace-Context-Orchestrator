@@ -6,9 +6,13 @@ set -euo pipefail
 
 cd /home/user/Workspace-Context-Orchestrator
 
+# Prefer uncommitted changes; fall back to last commit diff
 DIFF=$(git diff HEAD 2>/dev/null)
 if [ -z "$DIFF" ]; then
   DIFF=$(git diff --cached 2>/dev/null)
+fi
+if [ -z "$DIFF" ]; then
+  DIFF=$(git diff HEAD~1 HEAD 2>/dev/null)
 fi
 
 if [ -z "$DIFF" ]; then
@@ -21,10 +25,11 @@ PROMPT="You are a senior code reviewer. Review the following git diff and fix an
 $DIFF
 --- END DIFF ---"
 
+BEFORE=$(git diff HEAD 2>/dev/null | md5sum)
 OUTPUT=$(codex --approval-mode auto-edit "$PROMPT" 2>&1)
+AFTER=$(git diff HEAD 2>/dev/null | md5sum)
 
-# Check if Codex made any changes
-if git diff --quiet 2>/dev/null; then
+if [ "$BEFORE" = "$AFTER" ]; then
   exit 0
 else
   echo "$OUTPUT"
