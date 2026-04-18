@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd /home/user/Workspace-Context-Orchestrator && bash scripts/codex-review.sh 2>/dev/null || true",
+            "timeout": 120,
+            "statusMessage": "Running Codex review..."
+          }
+        ]
+      }
+    ]
+  }
+}
