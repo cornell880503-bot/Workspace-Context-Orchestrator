@@ -1,31 +1,32 @@
 #!/usr/bin/env bash
-# Run OpenAI Codex to review uncommitted or staged changes.
-# Usage: ./scripts/codex-review.sh [base-ref]
-#   base-ref defaults to HEAD (reviews unstaged+staged changes)
-#   Pass a commit SHA or branch to diff against that ref instead.
+# Runs Codex in auto-edit mode on the current diff.
+# Exit 0 = clean (no rewake). Exit 2 = Codex made fixes (rewake Claude).
 
 set -euo pipefail
 
-BASE="${1:-HEAD}"
+cd /home/user/Workspace-Context-Orchestrator
 
-DIFF=$(git diff "$BASE" 2>/dev/null)
+DIFF=$(git diff HEAD 2>/dev/null)
 if [ -z "$DIFF" ]; then
   DIFF=$(git diff --cached 2>/dev/null)
 fi
 
 if [ -z "$DIFF" ]; then
-  echo "No changes to review."
   exit 0
 fi
 
-PROMPT="You are a senior code reviewer. Review the following git diff carefully.
-Identify: bugs, security issues, performance problems, style issues, and improvements.
-Be concise and actionable. Format as a numbered list.
+PROMPT="You are a senior code reviewer. Review the following git diff and fix any bugs, security issues, or significant problems directly in the files. Only change what needs fixing — do not refactor working code.
 
 --- DIFF ---
 $DIFF
 --- END DIFF ---"
 
-echo "Running Codex review..."
-echo "---"
-codex --approval-mode suggest-only "$PROMPT"
+OUTPUT=$(codex --approval-mode auto-edit "$PROMPT" 2>&1)
+
+# Check if Codex made any changes
+if git diff --quiet 2>/dev/null; then
+  exit 0
+else
+  echo "$OUTPUT"
+  exit 2
+fi

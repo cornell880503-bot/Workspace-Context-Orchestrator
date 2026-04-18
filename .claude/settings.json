@@ -5,9 +5,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd /home/user/Workspace-Context-Orchestrator && bash scripts/codex-review.sh 2>/dev/null || true",
-            "timeout": 120,
-            "statusMessage": "Running Codex review..."
+            "command": "bash /home/user/Workspace-Context-Orchestrator/scripts/codex-review.sh",
+            "timeout": 180,
+            "statusMessage": "Codex reviewing...",
+            "asyncRewake": true,
+            "rewakeMessage": "Codex found and fixed issues. Review Codex's changes and update accordingly:",
+            "rewakeSummary": "Codex review applied fixes"
           }
         ]
       }
