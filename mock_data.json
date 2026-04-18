@@ -1,0 +1,130 @@
+[
+  {
+    "id": "gmail_001",
+    "source": "gmail",
+    "title": "Re: Project Alpha Sync — This Thursday 2pm",
+    "content": "Hi team, confirming our sync Thursday at 2pm. I'll walk through the Q2 roadmap updates and vendor decision. Please review the latest proposal doc (v3) before joining. Key agenda: Beta API v2 timeline, security findings, CloudProvider Y backup. — Sarah",
+    "timestamp": "2026-04-16T09:23:00",
+    "metadata": {"sender": "sarah@company.com", "recipients": ["team@company.com"]}
+  },
+  {
+    "id": "gmail_002",
+    "source": "gmail",
+    "title": "URGENT: Security Audit Results — Review Before Thursday Sync",
+    "content": "Team, the security audit on API v2 is complete. Found 2 critical vulnerabilities: (1) auth bypass in token refresh endpoint, (2) missing rate limiting on bulk export. Patching ETA is 1 week. This will be the primary agenda item at Thursday's sync. John, please have a remediation plan ready. — Security Team",
+    "timestamp": "2026-04-15T16:00:00",
+    "metadata": {"sender": "security@company.com", "recipients": ["team@company.com"]}
+  },
+  {
+    "id": "gmail_003",
+    "source": "gmail",
+    "title": "Action Items from Monday Standup",
+    "content": "Quick recap from today: 1) John to finalize API v2 hardening specs by Wednesday, 2) Lisa to update client-facing Figma mockups with new auth flow, 3) Whole team to review vendor proposal from CloudProvider Y before Thursday sync. Next sync Thursday 2pm.",
+    "timestamp": "2026-04-14T16:45:00",
+    "metadata": {"sender": "john@company.com", "recipients": ["team@company.com"]}
+  },
+  {
+    "id": "gmail_004",
+    "source": "gmail",
+    "title": "Re: Project Alpha Sync — Last Quarter Review",
+    "content": "Team, wrapping up Q4. Project Alpha delivered 3 of 5 milestones. Budget remaining: $45k. The auth module is 80% complete. Next sync scheduled for Q1 kickoff. Great work everyone. — Sarah",
+    "timestamp": "2026-01-10T14:30:00",
+    "metadata": {"sender": "sarah@company.com", "recipients": ["team@company.com"]}
+  },
+  {
+    "id": "gmail_005",
+    "source": "gmail",
+    "title": "Project Alpha — Initial Kickoff Notes",
+    "content": "Sharing notes from our kickoff session: Project scope defined, 6-month timeline approved, budget $200k signed off. Team leads assigned: Sarah (PM), John (Engineering), Lisa (Design). First milestone: internal prototype by end of Month 2.",
+    "timestamp": "2025-10-01T11:00:00",
+    "metadata": {"sender": "ceo@company.com", "recipients": ["team@company.com"]}
+  },
+  {
+    "id": "gmail_006",
+    "source": "gmail",
+    "title": "Project Sync Prep — Checklist Template",
+    "content": "For anyone preparing for the upcoming project sync: 1) Review last meeting's action items, 2) Check milestone status on Jira, 3) Prepare a 2-min update on your workstream, 4) Identify top 1-2 blockers for group discussion, 5) Check if any decisions need stakeholder sign-off.",
+    "timestamp": "2025-11-20T08:00:00",
+    "metadata": {"sender": "sarah@company.com", "recipients": ["team@company.com"]}
+  },
+  {
+    "id": "gmail_007",
+    "source": "gmail",
+    "title": "Company Picnic — Save the Date!",
+    "content": "Join us for the annual company picnic on May 25th at Riverside Park. RSVP by May 5th. Food, games, and fun for the whole family! Vegetarian options available. Reply to this email to indicate dietary preferences.",
+    "timestamp": "2026-04-10T10:00:00",
+    "metadata": {"sender": "hr@company.com", "recipients": ["all@company.com"]}
+  },
+  {
+    "id": "docs_001",
+    "source": "docs",
+    "title": "Project Alpha — Q2 Roadmap Proposal v3",
+    "content": "Executive Summary: This proposal outlines Project Alpha's Q2 milestones: (1) Launch Beta API v2 by May 15 pending security clearance, (2) Onboard 3 enterprise clients by June 30, (3) Complete SOC2 security audit by April 30. Timeline: April–June 2026. Budget request: $85k (+$15k security contingency). Key risks: auth vulnerability in v2 requires patching before external exposure; vendor dependency on CloudProvider X is single point of failure — backup evaluation of CloudProvider Y in progress.",
+    "timestamp": "2026-04-12T14:00:00",
+    "metadata": {"author": "sarah@company.com", "doc_type": "proposal"}
+  },
+  {
+    "id": "docs_002",
+    "source": "docs",
+    "title": "Project Alpha Sync — Meeting Notes (Apr 10)",
+    "content": "Attendees: Sarah, John, Lisa, Mike, Stakeholder A. Decisions made: (1) Beta launch delayed 2 weeks due to security audit findings, new target May 15. (2) CloudProvider Y approved as backup vendor — evaluation to complete by Apr 20. (3) Budget reallocation of +$15k for security remediation approved by Stakeholder A. Action items: John owns API hardening (due Apr 16), Lisa owns updated client comms timeline (due Apr 18), Sarah to update proposal doc to v3.",
+    "timestamp": "2026-04-10T17:30:00",
+    "metadata": {"author": "sarah@company.com", "doc_type": "meeting_notes"}
+  },
+  {
+    "id": "docs_003",
+    "source": "docs",
+    "title": "Project Alpha Sync — Meeting Notes (Jan 8)",
+    "content": "Attendees: Sarah, John. Q1 planning session. Decisions: Focus on internal testing only this quarter, skip public beta. Budget freeze in effect until Q2 approval. Action: Sarah to prepare full Q2 roadmap proposal for March review. John to scope API v2 effort and report back by Jan 22.",
+    "timestamp": "2026-01-08T15:00:00",
+    "metadata": {"author": "john@company.com", "doc_type": "meeting_notes"}
+  },
+  {
+    "id": "docs_004",
+    "source": "docs",
+    "title": "CloudProvider Y — Vendor Evaluation Brief",
+    "content": "Evaluation of CloudProvider Y as backup to CloudProvider X. Summary: pricing 12% lower, SLA 99.95% vs 99.9%, data residency in EU/US. Migration complexity: medium (2-week effort). Recommendation: approve as backup vendor. Decision needed by Apr 20 sync. Prepared by: John.",
+    "timestamp": "2026-04-13T11:00:00",
+    "metadata": {"author": "john@company.com", "doc_type": "brief"}
+  },
+  {
+    "id": "docs_005",
+    "source": "docs",
+    "title": "HR Policy Update — Remote Work Guidelines 2026",
+    "content": "Effective March 1 2026, all employees are required to be in office on Tuesdays and Thursdays. Remote work permitted Monday, Wednesday, Friday. Exception requests must be submitted through the HR portal at least 48 hours in advance. Managers may grant temporary exceptions for client travel.",
+    "timestamp": "2026-02-28T09:00:00",
+    "metadata": {"author": "hr@company.com", "doc_type": "policy"}
+  },
+  {
+    "id": "cal_001",
+    "source": "calendar",
+    "title": "Project Alpha Weekly Sync — Thu Apr 18 @ 2pm",
+    "content": "Weekly project sync. Agenda: (1) Q2 roadmap v3 review and stakeholder sign-off, (2) Security audit findings and remediation plan from John, (3) CloudProvider Y vendor decision, (4) Beta launch date confirmation. Participants: Sarah (organizer), John, Lisa, Mike, Stakeholder A. Location: Conf Room B / Zoom link in invite.",
+    "timestamp": "2026-04-18T14:00:00",
+    "metadata": {"organizer": "sarah@company.com", "duration_min": 60, "location": "Conf Room B"}
+  },
+  {
+    "id": "cal_002",
+    "source": "calendar",
+    "title": "1:1 Sarah <> John — Pre-sync Prep",
+    "content": "Pre-sync alignment call. Topics to cover: API v2 hardening status and remediation plan for Thursday, CloudProvider Y evaluation outcome, any blockers on John's action items from Apr 10 meeting. Prepare talking points for Thursday all-hands sync.",
+    "timestamp": "2026-04-17T11:00:00",
+    "metadata": {"organizer": "sarah@company.com", "duration_min": 30}
+  },
+  {
+    "id": "cal_003",
+    "source": "calendar",
+    "title": "Project Alpha Q4 Review — Jan 15",
+    "content": "End-of-quarter review meeting. Agenda: Q4 milestone review, budget reconciliation, team retrospective, Q1 planning kickoff. Participants: Sarah, John, Lisa, CEO. Duration: 90 min.",
+    "timestamp": "2026-01-15T10:00:00",
+    "metadata": {"organizer": "sarah@company.com", "duration_min": 90}
+  },
+  {
+    "id": "cal_004",
+    "source": "calendar",
+    "title": "Team Lunch — Welcome Alex!",
+    "content": "Welcoming Alex (new frontend engineer) to the team. Lunch at The Garden Restaurant. Please RSVP to Sarah by end of day Wednesday. Alex will be joining the Project Alpha team starting next sprint.",
+    "timestamp": "2026-04-19T12:30:00",
+    "metadata": {"organizer": "hr@company.com", "duration_min": 60}
+  }
+]
