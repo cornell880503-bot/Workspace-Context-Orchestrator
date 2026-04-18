@@ -1,37 +1,29 @@
 #!/usr/bin/env bash
-# Runs Codex in auto-edit mode on the current diff.
-# Exit 0 = clean (no rewake). Exit 2 = Codex made fixes (rewake Claude).
+# Runs `codex review` on the current changes.
+# Exit 0 = no issues. Exit 2 = Codex flagged problems (rewake Claude).
 
 set -euo pipefail
 
 cd /home/user/Workspace-Context-Orchestrator
 
-# Prefer uncommitted changes; fall back to last commit diff
-DIFF=$(git diff HEAD 2>/dev/null)
-if [ -z "$DIFF" ]; then
-  DIFF=$(git diff --cached 2>/dev/null)
-fi
-if [ -z "$DIFF" ]; then
-  DIFF=$(git diff HEAD~1 HEAD 2>/dev/null)
-fi
+# Determine what to review: uncommitted changes, then last commit
+HAS_UNCOMMITTED=$(git status --porcelain 2>/dev/null)
 
-if [ -z "$DIFF" ]; then
-  exit 0
-fi
-
-PROMPT="You are a senior code reviewer. Review the following git diff and fix any bugs, security issues, or significant problems directly in the files. Only change what needs fixing — do not refactor working code.
-
---- DIFF ---
-$DIFF
---- END DIFF ---"
-
-BEFORE=$(git diff HEAD 2>/dev/null | md5sum)
-OUTPUT=$(codex --approval-mode auto-edit "$PROMPT" 2>&1)
-AFTER=$(git diff HEAD 2>/dev/null | md5sum)
-
-if [ "$BEFORE" = "$AFTER" ]; then
-  exit 0
+if [ -n "$HAS_UNCOMMITTED" ]; then
+  OUTPUT=$(codex review --uncommitted 2>&1)
 else
-  echo "$OUTPUT"
+  LAST_COMMIT=$(git rev-parse HEAD 2>/dev/null)
+  if [ -z "$LAST_COMMIT" ]; then
+    exit 0
+  fi
+  OUTPUT=$(codex review --commit "$LAST_COMMIT" 2>&1)
+fi
+
+echo "$OUTPUT"
+
+# Rewake Claude if Codex flagged any issues (non-empty output with "issue"/"problem"/"error"/"fix")
+if echo "$OUTPUT" | grep -qiE "(issue|problem|bug|error|vulnerabilit|should|recommend|fix|concern)"; then
   exit 2
 fi
+
+exit 0
