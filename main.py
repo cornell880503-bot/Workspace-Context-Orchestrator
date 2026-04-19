@@ -129,6 +129,16 @@ def run(
 
     # Gemini comparison
     if generate:
+        import os as _os
+        _key = _os.environ.get("GEMINI_API_KEY", "")
+        print(f"\n  [Gemini DEBUG] GEMINI_API_KEY present: {bool(_key)} "
+              f"(len={len(_key)})")
+        try:
+            import google.genai as _probe
+            print(f"  [Gemini DEBUG] google.genai loaded from: {_probe.__file__}")
+        except ImportError as _e:
+            print(f"  [Gemini DEBUG] google.genai import failed: {_e}")
+
         from generator import GeminiGenerator, print_comparison
         try:
             print("\n  [Gemini] Generating responses …")
