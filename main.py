@@ -3,8 +3,8 @@
 Workspace Context Orchestrator — CLI
 Usage:
     python main.py
-    python main.py --query "Prepare for my project sync"
-    python main.py --budget 1000 --query "What are the vendor risks?"
+    python main.py --query "Prepare for my project sync" --role pm --name Sarah
+    python main.py --budget 800 --role engineer --interactive
 """
 from __future__ import annotations
 
@@ -13,8 +13,10 @@ import sys
 from pathlib import Path
 
 from data_simulator import WorkspaceDataSimulator
-from retriever import ContextRouter, ALPHA, BETA, GAMMA
+from retriever import ContextRouter
 from diagnostics import QualityDiagnostics
+from personalization import UserProfile, ROLES
+from memory import SessionMemory
 
 
 DEFAULT_QUERY  = "Prepare for my project sync"
@@ -26,35 +28,49 @@ def _banner() -> None:
     print("""
 ╔══════════════════════════════════════════════════════════════════════╗
 ║        Workspace Context Orchestrator  (WCO)  —  Prototype v1       ║
-║   Dynamic Context Engineering  ·  Quality Loss Diagnostics          ║
+║   Dynamic Context Engineering  ·  Personalization  ·  Memory        ║
 ╚══════════════════════════════════════════════════════════════════════╝""")
 
 
-def _print_selected(result, query: str) -> None:
+def _ask_user_profile() -> UserProfile:
+    print(f"  Roles: {', '.join(ROLES)}")
+    name = input("  Your name  > ").strip() or "User"
+    while True:
+        role = input(f"  Your role  > ").strip().lower()
+        if role in ROLES:
+            break
+        print(f"  Please choose from: {ROLES}")
+    return UserProfile(name=name, role=role)
+
+
+def _print_selected(result, query: str, user: UserProfile | None) -> None:
     W = 72
-    print("\n" + "═" * W)
-    print(f"  SELECTED CONTEXT  ·  query: '{query}'")
-    print("═" * W)
+    who = f" · {user}" if user else ""
+    print(f"\n{'═' * W}")
+    print(f"  SELECTED CONTEXT  ·  '{query}'{who}")
+    print(f"{'═' * W}")
 
     if not result.selected:
         print("  (no documents selected)")
         print("═" * W)
         return
 
+    bd = result.selected[0].breakdown
+    print(f"  Weights: α={bd['alpha']} (recency)  β={bd['beta']} (semantic)  γ={bd['gamma']} (authority)\n")
+
     for i, c in enumerate(result.selected, 1):
-        src   = c.doc.source.upper()
-        title = c.doc.title
-        ts    = c.doc.timestamp.strftime("%Y-%m-%d")
-        score = c.score
-        toks  = c.token_count
-        snippet = c.doc.content[:220].replace("\n", " ")
-        if len(c.doc.content) > 220:
+        src     = c.doc.source.upper()
+        ts      = c.doc.timestamp.strftime("%Y-%m-%d")
+        snippet = c.doc.content[:200].replace("\n", " ")
+        if len(c.doc.content) > 200:
             snippet += "…"
 
-        print(f"\n  [{i}] [{src}]  {title}")
-        print(f"       score={score:.3f}  recency={c.breakdown['recency']:.3f}  "
+        mem_tag = f"  ⟳ {c.memory_note}" if c.memory_note else ""
+        print(f"  [{i}] [{src}]  {c.doc.title}")
+        print(f"       score={c.score:.3f}  recency={c.breakdown['recency']:.3f}  "
               f"semantic={c.breakdown['semantic_sim']:.3f}  "
-              f"authority={c.breakdown['source_authority']}  tokens={toks}  date={ts}")
+              f"authority={c.breakdown['source_authority']}  "
+              f"tokens={c.token_count}  date={ts}{mem_tag}")
         print(f"       {snippet}")
 
     print(f"\n  Tokens used : {result.tokens_used} / {result.token_budget}")
@@ -64,7 +80,7 @@ def _print_selected(result, query: str) -> None:
 def _print_excluded_summary(result) -> None:
     if not result.excluded:
         return
-    print("\n  EXCLUDED ARTIFACTS (not in final context window)")
+    print("\n  EXCLUDED ARTIFACTS")
     print("  " + "─" * 68)
     for c in result.excluded:
         src   = c.doc.source.upper().ljust(8)
@@ -73,76 +89,103 @@ def _print_excluded_summary(result) -> None:
         print(f"            ↳ {c.exclusion_reason}")
 
 
-def run(query: str, token_budget: int) -> None:
-    if not DATA_PATH.exists():
-        print(f"[ERROR] Data file not found: {DATA_PATH}")
-        sys.exit(1)
+def run(
+    query: str,
+    token_budget: int,
+    router: ContextRouter,
+    user: UserProfile | None,
+    memory: SessionMemory,
+) -> None:
+    result = router.retrieve(query, user=user, memory=memory)
 
-    # --- Load & index ---
-    print(f"\n[1/3] Loading workspace data from {DATA_PATH.name} …")
-    sim  = WorkspaceDataSimulator(str(DATA_PATH))
-    docs = sim.load()
-    sim.summary(docs)
-
-    print("[2/3] Indexing (ChromaDB embeddings + BM25) …  (first run downloads ~80 MB model)")
-    router = ContextRouter(token_budget=token_budget)
-    router.index(docs)
-
-    # --- Retrieve ---
-    print(f"[3/3] Retrieving context for: '{query}'\n")
-    result = router.retrieve(query)
-
-    # --- Display ---
-    _print_selected(result, query)
+    _print_selected(result, query, user)
     _print_excluded_summary(result)
 
     diag   = QualityDiagnostics()
     report = diag.generate_report(
         result=result,
         query=query,
-        score_weights={"alpha": router.alpha, "beta": router.beta, "gamma": router.gamma},
+        score_weights={
+            "alpha": user.alpha  if user else router.alpha,
+            "beta":  user.beta   if user else router.beta,
+            "gamma": user.gamma  if user else router.gamma,
+        },
     )
     diag.print_report(report)
 
-    # Optional: export CSV for analysis
+    # Update memory with what was shown
+    memory.record_query(query)
+    memory.record_shown([c.doc.id for c in result.selected])
+    memory.print_stats()
+
+    # Export CSV if misses exist
     dfs = diag.to_dataframe(report)
     if not dfs["top_k_misses"].empty:
         out = Path("wco_misses.csv")
         dfs["top_k_misses"].to_csv(out, index=False)
-        print(f"\n  [CSV] Top-K misses exported → {out}")
+        print(f"\n  [CSV] Top-K misses → {out}")
 
 
 def main() -> None:
     _banner()
 
     parser = argparse.ArgumentParser(description="Workspace Context Orchestrator")
-    parser.add_argument("--query",  "-q", type=str, default="",   help="Natural-language query")
-    parser.add_argument("--budget", "-b", type=int, default=DEFAULT_BUDGET, help="Token budget (default 2000)")
-    parser.add_argument("--interactive", "-i", action="store_true", help="Interactive REPL mode")
+    parser.add_argument("--query",  "-q", type=str,  default="")
+    parser.add_argument("--budget", "-b", type=int,  default=DEFAULT_BUDGET)
+    parser.add_argument("--role",   "-r", type=str,  default="", choices=ROLES + [""])
+    parser.add_argument("--name",   "-n", type=str,  default="")
+    parser.add_argument("--interactive", "-i", action="store_true")
     args = parser.parse_args()
 
+    if not DATA_PATH.exists():
+        print(f"[ERROR] {DATA_PATH} not found.")
+        sys.exit(1)
+
+    # Load & index (once, shared across all queries)
+    print(f"\n[1/3] Loading workspace data …")
+    sim  = WorkspaceDataSimulator(str(DATA_PATH))
+    docs = sim.load()
+    sim.summary(docs)
+
+    print("[2/3] Indexing …  (first run downloads ~80 MB model)")
+    router = ContextRouter(token_budget=args.budget)
+    router.index(docs)
+
+    # Build user profile
+    user: UserProfile | None = None
+    if args.role:
+        name = args.name or args.role.capitalize()
+        user = UserProfile(name=name, role=args.role)
+        print(f"\n  User: {user}")
+    elif args.interactive:
+        print("\n[Personalization]")
+        user = _ask_user_profile()
+        print(f"  Welcome, {user}!\n")
+
+    memory = SessionMemory()
+
+    print("[3/3] Ready.\n")
+
     if args.interactive:
-        # Interactive REPL
-        print(f"  Token budget: {args.budget}   |   Type 'quit' to exit\n")
+        print(f"  Token budget: {args.budget}  |  Type 'quit' to exit\n")
         while True:
             try:
                 raw = input("Query > ").strip()
             except (EOFError, KeyboardInterrupt):
                 print("\nBye.")
                 break
-            if raw.lower() in ("quit", "exit", "q", ""):
-                if raw == "":
-                    raw = DEFAULT_QUERY
-                    print(f"  [Using default: '{raw}']")
-                else:
-                    print("Bye.")
-                    break
-            run(raw, args.budget)
+            if raw.lower() in ("quit", "exit", "q"):
+                print("Bye.")
+                break
+            query = raw or DEFAULT_QUERY
+            if not raw:
+                print(f"  [default: '{query}']")
+            run(query, args.budget, router, user, memory)
     else:
         query = args.query or DEFAULT_QUERY
         if not args.query:
             print(f"  No --query provided, using default: '{query}'\n")
-        run(query, args.budget)
+        run(query, args.budget, router, user, memory)
 
 
 if __name__ == "__main__":

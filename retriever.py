@@ -19,13 +19,15 @@ from chromadb.utils import embedding_functions
 from rank_bm25 import BM25Okapi
 
 from data_simulator import WorkspaceDocument
+from personalization import UserProfile
+from memory import SessionMemory
 
 # ---------------------------------------------------------------------------
-# Scoring constants
+# Scoring constants (defaults — overridden per-query by UserProfile)
 # ---------------------------------------------------------------------------
-ALPHA = 0.30          # Recency weight
-BETA  = 0.50          # Semantic similarity weight
-GAMMA = 0.20          # Source authority weight
+ALPHA = 0.30
+BETA  = 0.50
+GAMMA = 0.20
 
 RECENCY_HALF_LIFE_DAYS = 30
 
@@ -67,6 +69,7 @@ class RetrievalCandidate:
     token_count: int = 0
     excluded: bool = False
     exclusion_reason: Optional[str] = None
+    memory_note: Optional[str] = None      # set when session memory penalised this doc
 
 
 @dataclass
@@ -136,7 +139,7 @@ class ContextRouter:
     # ------------------------------------------------------------------
     # Query expansion
     # ------------------------------------------------------------------
-    def _expand_queries(self, query: str) -> list[str]:
+    def _expand_queries(self, query: str, boost_terms: list[str] | None = None) -> list[str]:
         expanded = [query]
         q = query.lower()
 
@@ -155,6 +158,8 @@ class ContextRouter:
             expanded += ["vendor evaluation recommendation decision"]
 
         expanded.append(f"latest recent {query}")
+        if boost_terms:
+            expanded.append(" ".join(boost_terms))
         return list(dict.fromkeys(expanded))   # preserve order, deduplicate
 
     # ------------------------------------------------------------------
@@ -188,8 +193,20 @@ class ContextRouter:
     # ------------------------------------------------------------------
     # Retrieve
     # ------------------------------------------------------------------
-    def retrieve(self, query: str) -> RetrievalResult:
-        queries = self._expand_queries(query)
+    def retrieve(
+        self,
+        query: str,
+        user: Optional[UserProfile] = None,
+        memory: Optional[SessionMemory] = None,
+    ) -> RetrievalResult:
+        # Resolve scoring weights from user profile or defaults
+        alpha = user.alpha  if user else self.alpha
+        beta  = user.beta   if user else self.beta
+        gamma = user.gamma  if user else self.gamma
+        authority_map = user.source_authority if user else SOURCE_AUTHORITY
+        boost_terms   = user.boost_terms      if user else None
+
+        queries = self._expand_queries(query, boost_terms=boost_terms)
         now     = datetime.now(timezone.utc)
 
         vscore = self._vector_search(queries, k=self.initial_top_k)
@@ -203,23 +220,30 @@ class ContextRouter:
             doc = doc_map[doc_id]
             v   = vscore.get(doc_id, 0.0)
             b   = bscore.get(doc_id, 0.0)
-            sem = 0.6 * v + 0.4 * b          # vector weighted higher than BM25
+            sem = 0.6 * v + 0.4 * b
 
-            rec  = _recency_score(doc.timestamp, now)
-            auth = SOURCE_AUTHORITY.get(doc.source, 0.5)
-            score = self.alpha * rec + self.beta * sem + self.gamma * auth
+            rec   = _recency_score(doc.timestamp, now)
+            auth  = authority_map.get(doc.source, 0.5)
+            score = alpha * rec + beta * sem + gamma * auth
+
+            # Apply session memory penalty for previously seen docs
+            mem_note: Optional[str] = None
+            if memory:
+                score, mem_note = memory.penalize(doc_id, score)
 
             candidates.append(RetrievalCandidate(
                 doc=doc,
                 score=score,
                 breakdown={
-                    "recency":           round(rec,  4),
-                    "semantic_sim":      round(sem,  4),
-                    "source_authority":  auth,
-                    "vector_sim":        round(v, 4),
-                    "bm25_sim":          round(b, 4),
+                    "recency":          round(rec,  4),
+                    "semantic_sim":     round(sem,  4),
+                    "source_authority": auth,
+                    "vector_sim":       round(v, 4),
+                    "bm25_sim":         round(b, 4),
+                    "alpha": alpha, "beta": beta, "gamma": gamma,
                 },
                 token_count=_count_tokens(doc.full_text()),
+                memory_note=mem_note,
             ))
 
         # Rerank by composite score
