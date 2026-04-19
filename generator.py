@@ -59,30 +59,32 @@ def _naive_context(all_docs: list[WorkspaceDocument], token_budget: int) -> list
 
 
 class GeminiGenerator:
-    def __init__(self, model_name: str = "gemini-1.5-flash"):
+    def __init__(self, model_name: str = "gemini-2.0-flash"):
         api_key = os.environ.get("GEMINI_API_KEY", "")
         if not api_key:
             raise EnvironmentError(
                 "GEMINI_API_KEY not set. Run: export GEMINI_API_KEY=your_key"
             )
         try:
-            import google.generativeai as genai
-            genai.configure(api_key=api_key)
-            self._model = genai.GenerativeModel(
-                model_name=model_name,
-                system_instruction=SYSTEM_PROMPT,
-            )
+            from google import genai
+            self._client = genai.Client(api_key=api_key)
+            self._model_name = model_name
         except ImportError:
             raise ImportError(
-                "google-generativeai not installed. Run: pip install google-generativeai"
+                "google-genai not installed. Run: pip install google-genai"
             )
 
     def _call(self, query: str, context_block: str) -> str:
+        from google import genai as _genai
         prompt = (
+            f"{SYSTEM_PROMPT}\n\n"
             f"WORKSPACE CONTEXT:\n\n{context_block}\n\n"
             f"USER QUERY: {query}"
         )
-        response = self._model.generate_content(prompt)
+        response = self._client.models.generate_content(
+            model=self._model_name,
+            contents=prompt,
+        )
         return response.text.strip()
 
     def generate(
