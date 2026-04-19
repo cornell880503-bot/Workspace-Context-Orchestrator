@@ -87,6 +87,45 @@ Tracks which documents have already been shown this session. Each re-exposure re
 - **Information Density**: composite metric of token utilisation × source diversity
 - **CSV export** of misses for downstream analysis
 
+### Gemini Live Comparison (`--generate`)
+Calls the **Gemini 2.5 Flash** API twice with the same user query and token budget, using two different context-assembly strategies:
+
+| | WCO Context | Naive Context |
+|---|---|---|
+| **Selection** | Hybrid search → weighted rerank → memory penalty | Recency sort only |
+| **Content** | High-relevance, role-personalised artifacts | Most-recent N docs |
+| **Goal** | Best answer within budget | Baseline (no intelligence) |
+
+The side-by-side output makes it immediately obvious why context quality matters — same model, same query, different answers.
+
+**Setup:**
+```bash
+export GEMINI_API_KEY=your_key   # must use `export`
+python3 main.py --role pm --generate --query "Prepare for my project sync"
+```
+
+**Example output:**
+```
+████████████████████████████████████████████████████████████████████████
+  GEMINI RESPONSE COMPARISON
+  Demonstrates why context quality matters
+████████████████████████████████████████████████████████████████████████
+
+  ┌─ WCO CONTEXT  (312 tokens · reranked + personalised)
+  │  • Thursday sync confirmed for 2pm — security audit results on agenda
+  │  • Three open action items need owner assignment before the meeting
+  │  • Budget approval from CFO still pending — escalate if unresolved
+  └───────────────────────────────────────────────────────────────────
+
+  ┌─ NAIVE CONTEXT  (1843 tokens · recency-only, no reranking)
+  │  • Multiple documents reference project syncs across different quarters
+  │  • Unable to determine which sync is most relevant without more context
+  └───────────────────────────────────────────────────────────────────
+
+  ↑ Same query. Same token budget. Different context quality → different answers.
+████████████████████████████████████████████████████████████████████████
+```
+
 ---
 
 ## Quickstart
