@@ -59,7 +59,7 @@ def _naive_context(all_docs: list[WorkspaceDocument], token_budget: int) -> list
 
 
 class GeminiGenerator:
-    def __init__(self, model_name: str = "gemini-2.0-flash"):
+    def __init__(self, model_name: str = "gemini-2.5-flash"):
         api_key = os.environ.get("GEMINI_API_KEY", "")
         if not api_key:
             raise EnvironmentError(
