@@ -125,7 +125,7 @@ python3 main.py --role pm --budget 400 --query "Prepare for my project sync"
 python3 main.py --role pm --interactive
 
 # Gemini comparison: WCO-curated context vs naive recency-only context
-export GEMINI_API_KEY=your_key   # or add to ~/.zshrc
+export GEMINI_API_KEY=your_key   # must use `export`, not just assignment
 python3 main.py --role pm --generate --query "Prepare for my project sync"
 ```
 
@@ -151,6 +151,7 @@ python3 main.py --role pm --generate --query "Prepare for my project sync"
 ├── personalization.py    # UserProfile with role-based scoring weights
 ├── memory.py             # SessionMemory: cross-query seen-doc penalty
 ├── diagnostics.py        # Quality Loss report: Top-K Misses, Reasoning Log
+├── generator.py          # Gemini API: WCO-curated vs naive response comparison
 ├── main.py               # CLI entry point
 └── requirements.txt
 ```
@@ -193,3 +194,5 @@ $$Recency(t) = e^{-\ln 2 \cdot \frac{days\_old}{30}}$$
 **Token counting**: uses `tiktoken` (`cl100k_base`) if available, otherwise word-count approximation (×1.3)
 
 **Memory penalty**: score × (1 − 0.25 × min(views, 3)), so a doc shown 3× has its score halved
+
+**Gemini model**: defaults to `gemini-2.5-flash` via the `google-genai` SDK. Override with `GeminiGenerator(model_name="...")`.
