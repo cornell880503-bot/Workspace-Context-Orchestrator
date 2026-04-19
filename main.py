@@ -4,6 +4,7 @@ Workspace Context Orchestrator — CLI
 Usage:
     python main.py
     python main.py --query "Prepare for my project sync" --role pm --name Sarah
+    python main.py --role engineer --generate
     python main.py --budget 800 --role engineer --interactive
 """
 from __future__ import annotations
@@ -95,6 +96,7 @@ def run(
     router: ContextRouter,
     user: UserProfile | None,
     memory: SessionMemory,
+    generate: bool = False,
 ) -> None:
     result = router.retrieve(query, user=user, memory=memory)
 
@@ -125,6 +127,22 @@ def run(
         dfs["top_k_misses"].to_csv(out, index=False)
         print(f"\n  [CSV] Top-K misses → {out}")
 
+    # Gemini comparison
+    if generate:
+        from generator import GeminiGenerator, print_comparison
+        try:
+            print("\n  [Gemini] Generating responses …")
+            gen = GeminiGenerator()
+            comparison = gen.generate(
+                query=query,
+                wco_selected=result.selected,
+                all_docs=router.documents,
+                token_budget=token_budget,
+            )
+            print_comparison(comparison)
+        except (EnvironmentError, ImportError) as e:
+            print(f"\n  [Gemini] Skipped: {e}")
+
 
 def main() -> None:
     _banner()
@@ -135,6 +153,7 @@ def main() -> None:
     parser.add_argument("--role",   "-r", type=str,  default="", choices=ROLES + [""])
     parser.add_argument("--name",   "-n", type=str,  default="")
     parser.add_argument("--interactive", "-i", action="store_true")
+    parser.add_argument("--generate",    "-g", action="store_true", help="Call Gemini API and show WCO vs Naive comparison")
     args = parser.parse_args()
 
     if not DATA_PATH.exists():
@@ -180,12 +199,12 @@ def main() -> None:
             query = raw or DEFAULT_QUERY
             if not raw:
                 print(f"  [default: '{query}']")
-            run(query, args.budget, router, user, memory)
+            run(query, args.budget, router, user, memory, generate=args.generate)
     else:
         query = args.query or DEFAULT_QUERY
         if not args.query:
             print(f"  No --query provided, using default: '{query}'\n")
-        run(query, args.budget, router, user, memory)
+        run(query, args.budget, router, user, memory, generate=args.generate)
 
 
 if __name__ == "__main__":

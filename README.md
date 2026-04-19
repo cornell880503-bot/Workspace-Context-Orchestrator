@@ -123,6 +123,10 @@ python3 main.py --role pm --budget 400 --query "Prepare for my project sync"
 
 # Interactive REPL (memory persists across queries)
 python3 main.py --role pm --interactive
+
+# Gemini comparison: WCO-curated context vs naive recency-only context
+export GEMINI_API_KEY=your_key   # or add to ~/.zshrc
+python3 main.py --role pm --generate --query "Prepare for my project sync"
 ```
 
 ### CLI flags
@@ -134,6 +138,7 @@ python3 main.py --role pm --interactive
 | `--name` | `-n` | role name | Display name for the user |
 | `--budget` | `-b` | `2000` | Token budget for context window |
 | `--interactive` | `-i` | off | REPL mode with persistent session memory |
+| `--generate` | `-g` | off | Call Gemini and show WCO vs Naive response comparison |
 
 ---
 
